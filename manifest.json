@@ -1,8 +1,9 @@
-{
+
   "name": "Sakafo Gasy – Commandes",
   "short_name": "Sakafo",
   "description": "Prise de commande Au Bol d'Or",
-  "start_url": "./sakafo_app.html",
+  "start_url": "/SAKAFO-APP/index.html",
+  "scope": "/SAKAFO-APP/",
   "display": "standalone",
   "background_color": "#0f0f0f",
   "theme_color": "#c9a84c",
