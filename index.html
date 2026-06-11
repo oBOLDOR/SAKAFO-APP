@@ -239,7 +239,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 /* PRINT */
 #print-zone { display: none; }
 @media print {
-  body > * { display: none !important; }
+  * { background: #fff !important; color: #000 !important; }
+body > * { display: none !important; }
   #print-zone {
     display: block !important; font-family: 'Courier New', monospace;
     font-size: 13px; color: #000; width: 80mm; padding: 4mm;
