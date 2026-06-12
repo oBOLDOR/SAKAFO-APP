@@ -802,11 +802,16 @@ function updateOrderMeta() {
 // ENVOYER EN CUISINE
 // ══════════════════════════════════════════
 function sendOrder() {
-  // Collecter les nouveaux articles
+  // Collecter les nouveaux articles avec le nom du plat
   const newItems = [];
   Object.keys(uiQty).forEach(k => {
     if (uiQty[k] > 0) {
-      newItems.push({ key: k, qty: uiQty[k], opts: [...uiOpts[k]], note: uiNote[k] });
+      // Trouver le nom du plat
+      let itemName = '';
+      MENU.forEach(cat => cat.items.forEach((it, i) => {
+        if (makeKey(cat.cat, i) === k) itemName = it.n;
+      }));
+      newItems.push({ key: k, name: itemName, qty: uiQty[k], opts: [...uiOpts[k]], note: uiNote[k] });
     }
   });
 
