@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -290,14 +291,23 @@ let allData = {};
 let historique = JSON.parse(localStorage.getItem('sakafo_historique') || '[]');
 
 function initManager() {
-  document.addEventListener('firebase-ready', () => {
+  if (window.fbDb) {
     const r = window.fbRef(window.fbDb, 'tables');
     window.fbOnValue(r, (snapshot) => {
       allData = snapshot.val() || {};
       renderLive();
       renderStats();
     });
-  });
+  } else {
+    document.addEventListener('firebase-ready', () => {
+      const r = window.fbRef(window.fbDb, 'tables');
+      window.fbOnValue(r, (snapshot) => {
+        allData = snapshot.val() || {};
+        renderLive();
+        renderStats();
+      });
+    });
+  }
   renderHistorique();
 }
 
