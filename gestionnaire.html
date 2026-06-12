@@ -147,8 +147,27 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .hist-item { font-size: 12px; color: var(--dim); padding: 2px 0; }
 .hist-item span { color: var(--text); }
 
-/* EMPTY */
-.empty-state { text-align: center; padding: 40px 20px; color: var(--dim); font-size: 14px; }
+.table-detail { padding: 8px 0 4px; border-top: 1px solid var(--border); margin-top: 8px; }
+.table-detail-item { font-size: 12px; color: var(--dim); padding: 2px 0; }
+.table-detail-item span { color: var(--text); }
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+  z-index: 200; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--card); border: 2px solid var(--gold);
+  border-radius: 16px 16px 0 0; width: 100%; max-width: 480px; padding: 24px 20px;
+}
+.modal-icon { text-align: center; font-size: 40px; margin-bottom: 8px; }
+.modal-title { text-align: center; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; color: var(--gold); letter-spacing: 1px; }
+.modal-sub { text-align: center; font-size: 13px; color: var(--dim); margin-top: 6px; margin-bottom: 16px; }
+.modal-btns { display: flex; gap: 8px; }
+.modal-btns button { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; }
+.btn-annuler { background: var(--card2); color: var(--dim); border: 1px solid var(--border) !important; }
+.btn-confirmer { background: var(--red); color: #fff; }
 </style>
 </head>
 <body>
@@ -230,6 +249,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="content" id="tab-historique">
     <div class="section-title">Historique des commandes</div>
     <div id="historique-list"></div>
+  </div>
+</div>
+
+<!-- MODAL FIN DE SERVICE -->
+<div class="modal-overlay" id="modal-fin">
+  <div class="modal-box">
+    <div class="modal-icon">🌙</div>
+    <div class="modal-title">Fin de service ?</div>
+    <div class="modal-sub">Toutes les tables seront fermées et l'historique effacé.</div>
+    <div class="modal-btns">
+      <button class="btn-annuler" onclick="document.getElementById('modal-fin').classList.remove('open')">Annuler</button>
+      <button class="btn-confirmer" onclick="confirmerFinService()">Confirmer</button>
+    </div>
   </div>
 </div>
 
@@ -340,15 +372,30 @@ function renderLive() {
     const t = allData[k];
     const bons = (t.rounds || []).length;
     const plats = (t.rounds || []).reduce((s, r) => s + (r.items||[]).reduce((a,it) => a+it.qty,0), 0);
+    // Détail des plats par table
+    const platDetail = {};
+    (t.rounds||[]).forEach(r => {
+      (r.items||[]).forEach(it => {
+        const name = getItemName(it);
+        platDetail[name] = (platDetail[name]||0) + it.qty;
+      });
+    });
+    const detailHTML = Object.entries(platDetail).map(([name, qty]) =>
+      `<div class="table-detail-item">• x${qty} ${name}</div>`
+    ).join('');
+
     return `
-      <div class="table-row">
-        <div class="table-row-left">
-          <div class="table-num">Table ${k}</div>
-          <div class="table-info">${t.couverts||'?'} couverts · ${t.serveur||'?'} · ${bons} bon(s) · ${plats} plat(s)</div>
+      <div class="table-row" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="table-row-left">
+            <div class="table-num">Table ${k}</div>
+            <div class="table-info">${t.couverts||'?'} couverts · ${t.serveur||'?'} · ${bons} bon(s) · ${plats} plat(s)</div>
+          </div>
+          <div class="table-row-right">
+            <button class="btn-fermer" onclick="fermerTable(${k})">✕ Fermer</button>
+          </div>
         </div>
-        <div class="table-row-right">
-          <button class="btn-fermer" onclick="fermerTable(${k})">✕ Fermer</button>
-        </div>
+        ${detailHTML ? `<div class="table-detail">${detailHTML}</div>` : ''}
       </div>`;
   }).join('');
 }
@@ -437,11 +484,18 @@ function fermerTable(tableNum) {
 
 // ── FIN DE SERVICE ──
 function resetService() {
+  document.getElementById('modal-fin').classList.add('open');
+}
+
+function confirmerFinService() {
+  document.getElementById('modal-fin').classList.remove('open');
   if (!window.fbDb) return;
-  // Sauvegarder tout dans historique
   Object.keys(allData).forEach(k => fermerTable(parseInt(k)));
   setTimeout(() => {
     window.fbRemove(window.fbRef(window.fbDb, 'tables'));
+    localStorage.removeItem('sakafo_historique');
+    historique = [];
+    renderHistorique();
   }, 500);
 }
 
