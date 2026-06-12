@@ -839,6 +839,7 @@ function sendOrder() {
   updateBar();
   updateOrderMeta();
   syncTableToFirebase(currentTable);
+  saveToLocal();
   showToast(isComplement ? `⚡ Complément #${roundNum-1} envoyé !` : '✓ 1er bon envoyé en cuisine !');
 }
 
@@ -942,6 +943,7 @@ function askClose() { openModal('modal-confirm'); }
 function closeTable() {
   closeTableOnFirebase(currentTable);
   delete tables[currentTable];
+  saveToLocal();
   currentTable = null;
   goHome();
 }
@@ -983,8 +985,6 @@ document.querySelectorAll('.overlay').forEach(ov => {
 
 // ── INIT ──
 buildHome();
-
-// ── Sync Firebase ──
 function syncTableToFirebase(tableNum) {
   if (!window.fbDb) return;
   const t = tables[tableNum];
@@ -1028,6 +1028,38 @@ function listenToAllTables() {
 document.addEventListener('firebase-ready', () => {
   listenToAllTables();
 });
+
+// ── SAUVEGARDE AUTOMATIQUE localStorage ──
+const LS_KEY = 'sakafo_tables';
+
+function saveToLocal() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(tables));
+  } catch(e) {}
+}
+
+function loadFromLocal() {
+  try {
+    const data = localStorage.getItem(LS_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      Object.keys(parsed).forEach(k => {
+        tables[parseInt(k)] = parsed[k];
+      });
+    }
+  } catch(e) {}
+}
+
+// Charger au démarrage
+loadFromLocal();
+buildHome();
+
+// Sauvegarder automatiquement toutes les 10 secondes
+setInterval(saveToLocal, 10000);
+
+// Sauvegarder quand on quitte la page
+window.addEventListener('beforeunload', saveToLocal);
+window.addEventListener('pagehide', saveToLocal);
 
 // ── PWA Service Worker ──
 if ('serviceWorker' in navigator) {
