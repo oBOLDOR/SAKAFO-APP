@@ -359,16 +359,16 @@ function renderStats() {
   Object.values(allData).forEach(t => {
     (t.rounds||[]).forEach(r => {
       (r.items||[]).forEach(it => {
-        const name = getItemName(it.key);
+        const name = getItemName(it);
         platCount[name] = (platCount[name]||0) + it.qty;
       });
     });
   });
 
   // Aussi depuis l'historique
-  historique.forEach(h => {
+    historique.forEach(h => {
     (h.items||[]).forEach(it => {
-      const name = getItemName(it.key);
+      const name = getItemName(it);
       platCount[name] = (platCount[name]||0) + it.qty;
     });
   });
@@ -405,7 +405,7 @@ function renderHistorique() {
       </div>
       ${(h.items||[]).map(it => `
         <div class="hist-item">
-          <span>x${it.qty} ${getItemName(it.key)}</span>
+          <span>x${it.qty} ${getItemName(it)}</span>
           ${it.opts?.length ? ` → ${it.opts.join('/')}` : ''}
         </div>`).join('')}
     </div>`).join('');
@@ -446,11 +446,9 @@ function resetService() {
 }
 
 // ── NOM ARTICLE ──
-function getItemName(key) {
-  if (!key) return '?';
-  const parts = key.split('_');
-  const catParts = parts.slice(0, -1).join(' ');
-  return catParts || key;
+function getItemName(item) {
+  if (typeof item === 'string') return item || '?';
+  return item.name || item.key || '?';
 }
 </script>
 </body>
