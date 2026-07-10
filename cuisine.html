@@ -209,7 +209,8 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ── État local des items cochés ──
-const checkedItems = {}; // `tableNum_roundIdx_itemIdx` -> bool
+// Reset à chaque rendu pour éviter les coches persistantes
+let checkedItems = {};
 
 // ── Écouter Firebase ──
 document.addEventListener('firebase-ready', () => {
@@ -222,21 +223,23 @@ document.addEventListener('firebase-ready', () => {
 
 function renderBons(data) {
   const container = document.getElementById('bons-container');
-
-  // Collecter tous les bons (rounds) de toutes les tables
+  // Reset les coches à chaque mise à jour
+  checkedItems = {};
   const allBons = [];
   Object.keys(data).forEach(tableNum => {
     const table = data[tableNum];
     const rounds = table.rounds || [];
     rounds.forEach((round, roundIdx) => {
       if (!round || !round.items || round.items.length === 0) return;
+      // Ne garder que les bons NON validés
+      if (round.done) return;
       allBons.push({
         tableNum: tableNum,
         tableLabel: data[tableNum].label || `Table ${tableNum}`,
         roundIdx,
         round,
         table,
-        isDone: round.done || false,
+        isDone: false,
         isComplement: roundIdx > 0,
       });
     });
