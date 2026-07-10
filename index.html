@@ -336,6 +336,21 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <input type="text" id="meta-serveur" placeholder="prénom">
     </div>
   </div>
+  <!-- Champs spéciaux À emporter -->
+  <div id="emporter-fields" style="display:none;padding:0 14px 8px;gap:8px;display:none;flex-wrap:wrap;">
+    <div class="meta-pill" style="min-width:120px;">
+      <label>N° Commande</label>
+      <input type="text" id="meta-num-cmd" placeholder="ex: 001" readonly style="background:#c9a84c22;color:var(--gold);font-weight:700;">
+    </div>
+    <div class="meta-pill" style="min-width:140px;">
+      <label>Nom client</label>
+      <input type="text" id="meta-nom-client" placeholder="Prénom client">
+    </div>
+    <div class="meta-pill" style="min-width:100px;">
+      <label>Heure retrait</label>
+      <input type="time" id="meta-heure-retrait">
+    </div>
+  </div>
   <div class="cat-tabs-wrap" id="cat-tabs-wrap">
     <div class="cat-tabs-row" id="cat-tabs-shortcuts"></div>
     <div class="cat-tabs-row" id="cat-tabs"></div>
@@ -670,10 +685,20 @@ function openTable(id) {
   const tableName = id === 'EMPORTER' ? '🥡 À Emporter' : (tableInfo ? tableInfo.label : id);
   document.getElementById('order-title').textContent = tableName;
 
-  // Service par défaut pour À emporter
+  // Champs spéciaux À emporter
+  const emporterFields = document.getElementById('emporter-fields');
   if (id === 'EMPORTER') {
+    emporterFields.style.display = 'flex';
     document.getElementById('meta-service').value = 'Emporter';
+    // Numéro de commande auto
+    const lastNum = parseInt(localStorage.getItem('sakafo_last_cmd_num') || '0');
+    const newNum = lastNum + 1;
+    localStorage.setItem('sakafo_last_cmd_num', newNum);
+    document.getElementById('meta-num-cmd').value = String(newNum).padStart(3, '0');
+    document.getElementById('meta-nom-client').value = '';
+    document.getElementById('meta-heure-retrait').value = '';
   } else {
+    emporterFields.style.display = 'none';
     document.getElementById('meta-service').value = tables[id].service || '';
   }
 
@@ -873,6 +898,11 @@ function sendOrder() {
   t.couverts = document.getElementById('meta-couverts').value;
   t.service = document.getElementById('meta-service').value;
   t.serveur = document.getElementById('meta-serveur').value;
+  if (currentTable === 'EMPORTER') {
+    t.numCmd = document.getElementById('meta-num-cmd').value;
+    t.nomClient = document.getElementById('meta-nom-client').value;
+    t.heureRetrait = document.getElementById('meta-heure-retrait').value;
+  }
 
   // Enregistrer le round
   t.rounds.push({ items: newItems, heure: now() });
@@ -929,9 +959,14 @@ function printRound(items, roundNum, isComplement, tableData) {
       <h2>BON DE COMMANDE</h2>
       <p>Au Bol d'Or · Vitry-sur-Seine</p>
       ${isComplement ? `<div class="pt-complement">⚡ COMPLÉMENT #${roundNum-1}</div>` : ''}
+      ${currentTable === 'EMPORTER' ? `<div class="pt-complement" style="border:2px solid #000;">🥡 À EMPORTER</div>` : ''}
     </div>
     <div class="pt-meta">
-      <p><b>Table :</b> ${table} &nbsp; <b>Couverts :</b> ${tableData.couverts || '?'}</p>
+      ${currentTable === 'EMPORTER' ? `
+      <p><b>N° Commande :</b> ${tableData.numCmd || '?'}</p>
+      <p><b>Client :</b> ${tableData.nomClient || '?'}</p>
+      <p><b>Retrait :</b> ${tableData.heureRetrait || '?'}</p>` : `
+      <p><b>Table :</b> ${tableData.label || currentTable} &nbsp; <b>Couverts :</b> ${tableData.couverts || '?'}</p>`}
       <p><b>Service :</b> ${tableData.service || '?'} &nbsp; <b>Serveur :</b> ${tableData.serveur || '?'}</p>
       <p><b>Heure :</b> ${heure} &nbsp; <b>Bon :</b> ${label}</p>
     </div>
