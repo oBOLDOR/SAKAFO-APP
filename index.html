@@ -306,10 +306,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="home-title">🍽 Tables</div>
   <div class="home-sub">Sélectionne une table ou tape un numéro</div>
   <div class="tables-grid" id="tables-grid"></div>
-  <div class="new-table-row">
-    <input class="new-table-input" type="number" id="custom-table" placeholder="N° de table..." min="1" max="99">
-    <button class="btn-gold" onclick="openTable(document.getElementById('custom-table').value)">Ouvrir</button>
-  </div>
 </div>
 
 <!-- ÉCRAN COMMANDE -->
@@ -506,11 +502,6 @@ const MENU = [
     { n: "Maskita + sauce voanjo" },
     { n: "Lasopy tongotr'omby" },
   ]},
-  { cat: "Vendredi soir & Week-end", items: [
-    { n: "Composé" },
-    { n: "Maskita + sauce voanjo" },
-    { n: "Lasopy tongotr'omby" },
-  ]},
   { cat: "Accompagnements", items: [
     { n: "Riz blanc" }, { n: "Frites" }, { n: "Légumes sautés" },
     { n: "Nouilles sautées" }, { n: "Salade" }, { n: "Achard de légumes" },
@@ -588,20 +579,72 @@ const uiOpts = {};      // key -> [opts]
 const uiNote = {};      // key -> note text
 
 // ══════════════════════════════════════════
+// TABLES NOMMÉES
+// ══════════════════════════════════════════
+const TABLES = [
+  // RDC
+  { id: 'T1', label: 'Table 1', zone: 'RDC' },
+  { id: 'T2', label: 'Table 2', zone: 'RDC' },
+  { id: 'T3', label: 'Table 3', zone: 'RDC' },
+  { id: 'TV', label: 'Table TV', zone: 'RDC' },
+  { id: 'F1M', label: 'F1 Miroir', zone: 'RDC' },
+  { id: 'F1E', label: 'F1 Escalier', zone: 'RDC' },
+  { id: 'F2M', label: 'F2 Miroir', zone: 'RDC' },
+  { id: 'F2E', label: 'F2 Escalier', zone: 'RDC' },
+  // ÉTAGE
+  { id: 'H1F', label: 'H1 Fenêtres', zone: 'Étage' },
+  { id: 'H2F', label: 'H2 Fenêtres', zone: 'Étage' },
+  { id: 'H3F', label: 'H3 Fenêtres', zone: 'Étage' },
+  { id: 'H1C', label: 'H1 Couloir', zone: 'Étage' },
+  { id: 'H2C', label: 'H2 Couloir', zone: 'Étage' },
+  { id: 'H3C', label: 'H3 Couloir', zone: 'Étage' },
+  { id: 'HR', label: 'HR', zone: 'Étage' },
+];
+
+// ══════════════════════════════════════════
 // ÉCRAN ACCUEIL
 // ══════════════════════════════════════════
 function buildHome() {
   const grid = document.getElementById('tables-grid');
   grid.innerHTML = '';
-  for (let i = 1; i <= 20; i++) {
-    const btn = document.createElement('div');
-    btn.className = 'table-btn' + (tables[i] ? ' has-order' : '');
-    const rounds = tables[i]?.rounds || [];
-    const totalSent = rounds.reduce((s, r) => s + r.items.reduce((a, it) => a + it.qty, 0), 0);
-    btn.innerHTML = `<span class="tnum">${i}</span><span>${tables[i] ? 'En cours' : 'Libre'}</span>${totalSent > 0 ? `<span class="tbadge">${totalSent}</span>` : ''}`;
-    btn.onclick = () => openTable(i);
-    grid.appendChild(btn);
-  }
+
+  // Zones
+  const zones = [...new Set(TABLES.map(t => t.zone))];
+  zones.forEach(zone => {
+    // Titre de zone
+    const zoneTitle = document.createElement('div');
+    zoneTitle.style.cssText = 'grid-column:1/-1;font-family:"Barlow Condensed",sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);padding:6px 0 2px;border-bottom:1px solid var(--gold-dim);margin-bottom:2px;';
+    zoneTitle.textContent = zone;
+    grid.appendChild(zoneTitle);
+
+    // Tables de cette zone
+    TABLES.filter(t => t.zone === zone).forEach(t => {
+      const btn = document.createElement('div');
+      const hasOrder = tables[t.id];
+      const rounds = tables[t.id]?.rounds || [];
+      const totalSent = rounds.reduce((s, r) => s + r.items.reduce((a, it) => a + it.qty, 0), 0);
+      btn.className = 'table-btn' + (hasOrder ? ' has-order' : '');
+      btn.innerHTML = `
+        <span class="tnum" style="font-size:14px;line-height:1.2;">${t.label}</span>
+        <span style="font-size:9px;">${hasOrder ? 'En cours' : 'Libre'}</span>
+        ${totalSent > 0 ? `<span class="tbadge">${totalSent}</span>` : ''}`;
+      btn.onclick = () => openTable(t.id);
+      grid.appendChild(btn);
+    });
+  });
+
+  // Bouton À emporter
+  const emporterBtn = document.createElement('div');
+  emporterBtn.style.cssText = 'grid-column:1/-1;margin-top:8px;';
+  emporterBtn.innerHTML = `
+    <div class="table-btn has-order" style="aspect-ratio:auto;padding:12px;flex-direction:row;gap:10px;border-color:var(--orange, #ff9800);width:100%;" onclick="openTable('EMPORTER')">
+      <span style="font-size:22px;">🥡</span>
+      <div style="text-align:left;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;color:#ff9800;letter-spacing:1px;">À Emporter</div>
+        <div style="font-size:10px;color:var(--text-dim);">${tables['EMPORTER'] ? 'En cours' : 'Nouvelle commande'}</div>
+      </div>
+    </div>`;
+  grid.appendChild(emporterBtn);
 }
 
 function goHome() {
@@ -610,11 +653,10 @@ function goHome() {
   buildHome();
 }
 
-function openTable(num) {
-  num = parseInt(num);
-  if (!num || num < 1 || num > 99) { alert('Numéro de table invalide'); return; }
-  currentTable = num;
-  if (!tables[num]) tables[num] = { couverts: '', service: '', serveur: '', rounds: [] };
+function openTable(id) {
+  if (!id) return;
+  currentTable = id;
+  if (!tables[id]) tables[id] = { couverts: '', service: '', serveur: '', rounds: [] };
 
   // Reset UI
   MENU.forEach(cat => cat.items.forEach((item, i) => {
@@ -624,10 +666,20 @@ function openTable(num) {
     uiNote[key] = '';
   }));
 
-  document.getElementById('order-title').textContent = `Table ${num}`;
-  document.getElementById('meta-couverts').value = tables[num].couverts || '';
-  document.getElementById('meta-service').value = tables[num].service || '';
-  document.getElementById('meta-serveur').value = tables[num].serveur || '';
+  // Nom de la table
+  const tableInfo = TABLES.find(t => t.id === id);
+  const tableName = id === 'EMPORTER' ? '🥡 À Emporter' : (tableInfo ? tableInfo.label : id);
+  document.getElementById('order-title').textContent = tableName;
+
+  // Service par défaut pour À emporter
+  if (id === 'EMPORTER') {
+    document.getElementById('meta-service').value = 'Emporter';
+  } else {
+    document.getElementById('meta-service').value = tables[id].service || '';
+  }
+
+  document.getElementById('meta-couverts').value = tables[id].couverts || '';
+  document.getElementById('meta-serveur').value = tables[id].serveur || '';
   document.getElementById('note-globale').value = '';
   document.getElementById('header-close-btn').style.display = 'block';
 
