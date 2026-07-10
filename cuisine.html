@@ -5,13 +5,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cuisine">
-<title>Écran Cuisine – Au Bol d'Or</title>
+<meta name="apple-mobile-web-app-title" content="Manager">
+<title>Manager – Au Bol d'Or</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB5G9DWiVGMaFt6vYCQmiHe41vD8YWHQIM",
@@ -27,321 +27,482 @@
   const db = getDatabase(app);
   window.fbDb = db;
   window.fbRef = ref;
-  window.fbUpdate = update;
   window.fbOnValue = onValue;
+  window.fbRemove = remove;
   document.dispatchEvent(new Event('firebase-ready'));
 </script>
 <style>
 :root {
-  --bg: #111;
-  --card: #1a1a1a;
+  --bg: #0f0f0f;
+  --card: #181818;
+  --card2: #222;
   --border: #2a2a2a;
   --gold: #c9a84c;
   --green: #4caf50;
   --red: #e53935;
   --orange: #ff9800;
-  --text: #f0f0f0;
+  --blue: #2196f3;
+  --text: #f0e6c8;
   --dim: #888;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
+/* PIN SCREEN */
+.pin-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; gap: 20px; padding: 24px;
+}
+.pin-logo { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; color: var(--gold); letter-spacing: 3px; text-transform: uppercase; }
+.pin-sub { font-size: 14px; color: var(--dim); }
+.pin-dots { display: flex; gap: 12px; margin: 8px 0; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--gold); background: transparent; transition: background 0.15s; }
+.pin-dot.filled { background: var(--gold); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 240px; }
+.pin-btn {
+  padding: 18px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); font-size: 22px; font-weight: 700;
+  cursor: pointer; text-align: center;
+}
+.pin-btn:active { background: var(--gold); color: #111; }
+.pin-btn.del { font-size: 18px; color: var(--red); }
+.pin-error { color: var(--red); font-size: 13px; }
+
 /* HEADER */
 .header {
-  background: #000;
-  border-bottom: 2px solid var(--gold);
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  background: #000; border-bottom: 2px solid var(--gold);
+  padding: 12px 16px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 10;
 }
-.header h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
-.header-right { display: flex; align-items: center; gap: 10px; }
-.live-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.time { font-size: 13px; color: var(--dim); }
-.btn-tout-valider {
-  background: var(--green); color: #fff; border: none;
-  padding: 8px 14px; border-radius: 6px;
+.header h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; color: var(--gold); letter-spacing: 2px; }
+.header-date { font-size: 12px; color: var(--dim); }
+.btn-reset-all {
+  background: var(--red); color: #fff; border: none;
+  padding: 8px 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+
+/* NAV TABS */
+.nav-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--card); }
+.nav-tab {
+  flex: 1; padding: 12px; text-align: center; font-size: 13px;
+  color: var(--dim); cursor: pointer; border-bottom: 2px solid transparent;
+}
+.nav-tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
+
+/* CONTENT */
+.content { padding: 16px; display: none; }
+.content.active { display: block; }
+
+/* STATS CARDS */
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; text-align: center;
+}
+.stat-value { font-family: 'Barlow Condensed', sans-serif; font-size: 36px; color: var(--gold); font-weight: 700; }
+.stat-label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+/* TABLES EN COURS */
+.section-title {
   font-family: 'Barlow Condensed', sans-serif; font-size: 14px;
-  font-weight: 700; letter-spacing: 1px; cursor: pointer;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--gold);
+  margin: 16px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;
+}
+.table-row {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.table-row-left { display: flex; flex-direction: column; gap: 2px; }
+.table-num { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; color: var(--gold); }
+.table-info { font-size: 11px; color: var(--dim); }
+.table-row-right { display: flex; align-items: center; gap: 8px; }
+.table-total { font-size: 13px; font-weight: 600; color: var(--text); }
+.btn-fermer {
+  background: var(--red); color: #fff; border: none;
+  padding: 6px 12px; border-radius: 6px; font-size: 12px;
+  font-weight: 700; cursor: pointer;
 }
 
-/* EMPTY */
-.empty {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; height: 70vh; gap: 12px;
+/* TOP PLATS */
+.plat-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
 }
-.empty-icon { font-size: 60px; }
-.empty-text { font-size: 16px; color: var(--dim); }
+.plat-row:last-child { border-bottom: none; }
+.plat-name { font-size: 13px; flex: 1; }
+.plat-bar-wrap { width: 80px; background: var(--border); border-radius: 4px; height: 6px; margin: 0 10px; }
+.plat-bar { height: 6px; background: var(--gold); border-radius: 4px; }
+.plat-qty { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; color: var(--gold); font-weight: 700; width: 30px; text-align: right; }
 
-/* GRID BONS */
-.bons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px;
-  padding: 16px;
+/* HISTORIQUE */
+.hist-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
 }
+.hist-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.hist-table { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; color: var(--gold); }
+.hist-time { font-size: 11px; color: var(--dim); }
+.hist-item { font-size: 12px; color: var(--dim); padding: 2px 0; }
+.hist-item span { color: var(--text); }
 
-/* BON CARTE */
-.bon-card {
-  background: var(--card);
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-.bon-card.complement { border-color: var(--orange); }
-.bon-card.done { opacity: 0.4; border-color: var(--green); }
+.table-detail { padding: 8px 0 4px; border-top: 1px solid var(--border); margin-top: 8px; }
+.table-detail-item { font-size: 12px; color: var(--dim); padding: 2px 0; }
+.table-detail-item span { color: var(--text); }
 
-.bon-head {
-  background: #222;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+  z-index: 200; align-items: flex-end; justify-content: center;
 }
-.bon-table { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; color: var(--gold); letter-spacing: 1px; }
-.bon-info { font-size: 11px; color: var(--dim); margin-top: 1px; }
-.bon-badge {
-  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--card); border: 2px solid var(--gold);
+  border-radius: 16px 16px 0 0; width: 100%; max-width: 480px; padding: 24px 20px;
 }
-.badge-new { background: var(--gold); color: #111; }
-.badge-comp { background: var(--orange); color: #111; }
-.badge-done { background: var(--green); color: #fff; }
-
-.bon-items { padding: 10px 14px; }
-.bon-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--border);
-}
-.bon-item:last-child { border-bottom: none; }
-.bon-item-check {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: transparent;
-  transition: all 0.15s;
-}
-.bon-item-check.checked {
-  background: var(--green);
-  border-color: var(--green);
-  color: #fff;
-}
-.bon-item-info { flex: 1; }
-.bon-item-name { font-size: 13px; color: var(--text); line-height: 1.3; }
-.bon-item-opts { font-size: 11px; color: var(--gold); margin-top: 2px; }
-.bon-item-note { font-size: 11px; color: var(--orange); font-style: italic; margin-top: 2px; }
-.bon-item-qty {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 20px; font-weight: 700; color: var(--gold);
-  flex-shrink: 0;
-}
-
-.bon-foot {
-  padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  gap: 8px;
-}
-.btn-valider {
-  flex: 1; padding: 10px; border-radius: 6px; border: none;
-  font-family: 'Barlow Condensed', sans-serif; font-size: 16px;
-  font-weight: 700; letter-spacing: 1px; cursor: pointer;
-  background: var(--green); color: #fff;
-}
-.btn-valider.done { background: var(--border); color: var(--dim); }
-.btn-valider:active { opacity: 0.8; }
-
-/* TOAST */
-#toast {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  background: var(--green); color: #fff; padding: 10px 20px;
-  border-radius: 20px; font-weight: 700; font-size: 13px;
-  z-index: 999; pointer-events: none; opacity: 0; transition: opacity 0.3s;
-}
+.modal-icon { text-align: center; font-size: 40px; margin-bottom: 8px; }
+.modal-title { text-align: center; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; color: var(--gold); letter-spacing: 1px; }
+.modal-sub { text-align: center; font-size: 13px; color: var(--dim); margin-top: 6px; margin-bottom: 16px; }
+.modal-btns { display: flex; gap: 8px; }
+.modal-btns button { flex: 1; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; }
+.btn-annuler { background: var(--card2); color: var(--dim); border: 1px solid var(--border) !important; }
+.btn-confirmer { background: var(--red); color: #fff; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div>
-    <h1>🍳 Cuisine</h1>
+<!-- PIN SCREEN -->
+<div id="pin-screen" class="pin-screen">
+  <div class="pin-logo">👑 Manager</div>
+  <div class="pin-sub">Au Bol d'Or – Accès sécurisé</div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
   </div>
-  <div class="header-right">
-    <div class="live-dot"></div>
-    <div class="time" id="clock"></div>
-    <button class="btn-tout-valider" onclick="toutValider()">✅ Tout valider</button>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-pad">
+    <div class="pin-btn" onclick="pinPress('1')">1</div>
+    <div class="pin-btn" onclick="pinPress('2')">2</div>
+    <div class="pin-btn" onclick="pinPress('3')">3</div>
+    <div class="pin-btn" onclick="pinPress('4')">4</div>
+    <div class="pin-btn" onclick="pinPress('5')">5</div>
+    <div class="pin-btn" onclick="pinPress('6')">6</div>
+    <div class="pin-btn" onclick="pinPress('7')">7</div>
+    <div class="pin-btn" onclick="pinPress('8')">8</div>
+    <div class="pin-btn" onclick="pinPress('9')">9</div>
+    <div class="pin-btn" style="visibility:hidden"></div>
+    <div class="pin-btn" onclick="pinPress('0')">0</div>
+    <div class="pin-btn del" onclick="pinDel()">⌫</div>
   </div>
 </div>
 
-<div id="bons-container">
-  <div class="empty">
-    <div class="empty-icon">🕐</div>
-    <div class="empty-text">En attente de commandes...</div>
+<!-- APP SCREEN -->
+<div id="app-screen" style="display:none;">
+  <div class="header">
+    <div>
+      <h1>👑 Manager</h1>
+      <div class="header-date" id="header-date"></div>
+    </div>
+    <button class="btn-reset-all" onclick="resetService()">🗑 Fin de service</button>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showTab('live')">🔴 Live</div>
+    <div class="nav-tab" onclick="showTab('stats')">📊 Stats</div>
+    <div class="nav-tab" onclick="showTab('historique')">📋 Historique</div>
+  </div>
+
+  <!-- LIVE -->
+  <div class="content active" id="tab-live">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-tables">0</div>
+        <div class="stat-label">Tables actives</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-couverts">0</div>
+        <div class="stat-label">Couverts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-bons">0</div>
+        <div class="stat-label">Bons envoyés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-plats">0</div>
+        <div class="stat-label">Plats commandés</div>
+      </div>
+    </div>
+    <div class="section-title">Tables en cours</div>
+    <div id="tables-live"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="content" id="tab-stats">
+    <div class="section-title">Top plats du service</div>
+    <div id="top-plats"></div>
+  </div>
+
+  <!-- HISTORIQUE -->
+  <div class="content" id="tab-historique">
+    <div class="section-title">Historique des commandes</div>
+    <div id="historique-list"></div>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- MODAL FIN DE SERVICE -->
+<div class="modal-overlay" id="modal-fin">
+  <div class="modal-box">
+    <div class="modal-icon">🌙</div>
+    <div class="modal-title">Fin de service ?</div>
+    <div class="modal-sub">Toutes les tables seront fermées et l'historique effacé.</div>
+    <div class="modal-btns">
+      <button class="btn-annuler" onclick="document.getElementById('modal-fin').classList.remove('open')">Annuler</button>
+      <button class="btn-confirmer" onclick="confirmerFinService()">Confirmer</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// ── Horloge ──
-function updateClock() {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+// ── PIN ──
+const PIN_CODE = '1234'; // Change ce code !
+let pinValue = '';
+
+function pinPress(num) {
+  if (pinValue.length >= 4) return;
+  pinValue += num;
+  updatePinDots();
+  if (pinValue.length === 4) {
+    setTimeout(checkPin, 200);
+  }
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-// ── État local des items cochés ──
-const checkedItems = {}; // `tableNum_roundIdx_itemIdx` -> bool
+function pinDel() {
+  pinValue = pinValue.slice(0, -1);
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
 
-// ── Écouter Firebase ──
-document.addEventListener('firebase-ready', () => {
-  const r = window.fbRef(window.fbDb, 'tables');
-  window.fbOnValue(r, (snapshot) => {
-    const data = snapshot.val() || {};
-    renderBons(data);
-  });
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById(`d${i}`).classList.toggle('filled', i < pinValue.length);
+  }
+}
+
+function checkPin() {
+  if (pinValue === PIN_CODE) {
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    initManager();
+  } else {
+    document.getElementById('pin-error').textContent = 'Code incorrect, réessaie';
+    pinValue = '';
+    updatePinDots();
+  }
+}
+
+// ── DATE ──
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', {
+  weekday: 'long', day: 'numeric', month: 'long'
 });
 
-function renderBons(data) {
-  const container = document.getElementById('bons-container');
+// ── TABS ──
+function showTab(name) {
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    const tabs = ['live', 'stats', 'historique'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
 
-  // Collecter tous les bons (rounds) de toutes les tables
-  const allBons = [];
-  Object.keys(data).forEach(tableNum => {
-    const table = data[tableNum];
-    const rounds = table.rounds || [];
-    rounds.forEach((round, roundIdx) => {
-      if (!round || !round.items || round.items.length === 0) return;
-      allBons.push({
-        tableNum: parseInt(tableNum),
-        roundIdx,
-        round,
-        table,
-        isDone: round.done || false,
-        isComplement: roundIdx > 0,
+// ── DONNÉES ──
+let allData = {};
+let historique = JSON.parse(localStorage.getItem('sakafo_historique') || '[]');
+
+function initManager() {
+  if (window.fbDb) {
+    const r = window.fbRef(window.fbDb, 'tables');
+    window.fbOnValue(r, (snapshot) => {
+      allData = snapshot.val() || {};
+      renderLive();
+      renderStats();
+    });
+  } else {
+    document.addEventListener('firebase-ready', () => {
+      const r = window.fbRef(window.fbDb, 'tables');
+      window.fbOnValue(r, (snapshot) => {
+        allData = snapshot.val() || {};
+        renderLive();
+        renderStats();
       });
+    });
+  }
+  renderHistorique();
+}
+
+// ── LIVE ──
+function renderLive() {
+  const keys = Object.keys(allData);
+  let totalCouverts = 0, totalBons = 0, totalPlats = 0;
+
+  keys.forEach(k => {
+    const t = allData[k];
+    totalCouverts += parseInt(t.couverts || 0);
+    totalBons += (t.rounds || []).length;
+    (t.rounds || []).forEach(r => {
+      (r.items || []).forEach(it => { totalPlats += it.qty || 0; });
     });
   });
 
-  if (allBons.length === 0) {
-    container.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">🕐</div>
-        <div class="empty-text">En attente de commandes...</div>
-      </div>`;
+  document.getElementById('stat-tables').textContent = keys.length;
+  document.getElementById('stat-couverts').textContent = totalCouverts;
+  document.getElementById('stat-bons').textContent = totalBons;
+  document.getElementById('stat-plats').textContent = totalPlats;
+
+  const container = document.getElementById('tables-live');
+  if (keys.length === 0) {
+    container.innerHTML = '<div class="empty-state">Aucune table active</div>';
     return;
   }
 
-  // Trier : non-validés en premier, puis par heure
-  allBons.sort((a, b) => {
-    if (a.isDone !== b.isDone) return a.isDone ? 1 : -1;
-    return (a.round.timestamp || 0) - (b.round.timestamp || 0);
-  });
-
-  let html = '<div class="bons-grid">';
-  allBons.forEach(({ tableNum, roundIdx, round, table, isDone, isComplement }) => {
-    const label = roundIdx === 0 ? '1er BON' : `⚡ COMPLÉMENT #${roundIdx}`;
-    const badgeClass = isDone ? 'badge-done' : isComplement ? 'badge-comp' : 'badge-new';
-    const badgeText = isDone ? '✅ VALIDÉ' : label;
-    const cardClass = isDone ? 'bon-card done' : isComplement ? 'bon-card complement' : 'bon-card';
-
-    let itemsHTML = '';
-    (round.items || []).forEach((item, itemIdx) => {
-      const itemKey = `${tableNum}_${roundIdx}_${itemIdx}`;
-      const isChecked = checkedItems[itemKey] || false;
-      itemsHTML += `
-        <div class="bon-item">
-          <div class="bon-item-check ${isChecked ? 'checked' : ''}" onclick="toggleItem('${itemKey}', this)">
-            ${isChecked ? '✓' : ''}
-          </div>
-          <div class="bon-item-info">
-            <div class="bon-item-name">${getItemName(item)}</div>
-            ${item.opts && item.opts.length ? `<div class="bon-item-opts">→ ${item.opts.join(' / ')}</div>` : ''}
-            ${item.note ? `<div class="bon-item-note">✎ ${item.note}</div>` : ''}
-          </div>
-          <div class="bon-item-qty">x${item.qty}</div>
-        </div>`;
-    });
-
-    html += `
-      <div class="${cardClass}" id="bon_${tableNum}_${roundIdx}">
-        <div class="bon-head">
-          <div>
-            <div class="bon-table">Table ${tableNum}</div>
-            <div class="bon-info">${table.couverts ? table.couverts + ' couverts' : ''} ${table.serveur ? '· ' + table.serveur : ''} · ${round.heure || ''}</div>
-          </div>
-          <span class="bon-badge ${badgeClass}">${badgeText}</span>
-        </div>
-        <div class="bon-items">${itemsHTML}</div>
-        <div class="bon-foot">
-          <button class="btn-valider ${isDone ? 'done' : ''}" onclick="validerBon(${tableNum}, ${roundIdx})">
-            ${isDone ? '✅ Validé' : '✅ Valider ce bon'}
-          </button>
-        </div>
-      </div>`;
-  });
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-function getItemName(item) {
-  return item.name || item.key || '?';
-}
-
-function toggleItem(itemKey, el) {
-  checkedItems[itemKey] = !checkedItems[itemKey];
-  el.classList.toggle('checked', checkedItems[itemKey]);
-  el.textContent = checkedItems[itemKey] ? '✓' : '';
-}
-
-function validerBon(tableNum, roundIdx) {
-  if (!window.fbDb) return;
-  const r = window.fbRef(window.fbDb, `tables/${tableNum}/rounds/${roundIdx}/done`);
-  window.fbUpdate(window.fbRef(window.fbDb, `tables/${tableNum}/rounds/${roundIdx}`), { done: true });
-  showToast(`✅ Table ${tableNum} — Bon #${roundIdx + 1} validé !`);
-}
-
-function toutValider() {
-  if (!window.fbDb) return;
-  const r = window.fbRef(window.fbDb, 'tables');
-  window.fbOnValue(r, (snapshot) => {
-    const data = snapshot.val() || {};
-    Object.keys(data).forEach(tableNum => {
-      const rounds = data[tableNum].rounds || [];
-      rounds.forEach((round, roundIdx) => {
-        if (!round.done) {
-          window.fbUpdate(window.fbRef(window.fbDb, `tables/${tableNum}/rounds/${roundIdx}`), { done: true });
-        }
+  container.innerHTML = keys.sort((a,b) => parseInt(a)-parseInt(b)).map(k => {
+    const t = allData[k];
+    const bons = (t.rounds || []).length;
+    const plats = (t.rounds || []).reduce((s, r) => s + (r.items||[]).reduce((a,it) => a+it.qty,0), 0);
+    // Détail des plats par table
+    const platDetail = {};
+    (t.rounds||[]).forEach(r => {
+      (r.items||[]).forEach(it => {
+        const name = getItemName(it);
+        platDetail[name] = (platDetail[name]||0) + it.qty;
       });
     });
-  }, { onlyOnce: true });
-  showToast('✅ Tous les bons validés !');
+    const detailHTML = Object.entries(platDetail).map(([name, qty]) =>
+      `<div class="table-detail-item">• x${qty} ${name}</div>`
+    ).join('');
+
+    return `
+      <div class="table-row" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="table-row-left">
+            <div class="table-num">Table ${k}</div>
+            <div class="table-info">${t.couverts||'?'} couverts · ${t.serveur||'?'} · ${bons} bon(s) · ${plats} plat(s)</div>
+          </div>
+          <div class="table-row-right">
+            <button class="btn-fermer" onclick="fermerTable(${k})">✕ Fermer</button>
+          </div>
+        </div>
+        ${detailHTML ? `<div class="table-detail">${detailHTML}</div>` : ''}
+      </div>`;
+  }).join('');
 }
 
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.opacity = '1';
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+// ── STATS ──
+function renderStats() {
+  const platCount = {};
+  Object.values(allData).forEach(t => {
+    (t.rounds||[]).forEach(r => {
+      (r.items||[]).forEach(it => {
+        const name = getItemName(it);
+        platCount[name] = (platCount[name]||0) + it.qty;
+      });
+    });
+  });
+
+  // Aussi depuis l'historique
+    historique.forEach(h => {
+    (h.items||[]).forEach(it => {
+      const name = getItemName(it);
+      platCount[name] = (platCount[name]||0) + it.qty;
+    });
+  });
+
+  const sorted = Object.entries(platCount).sort((a,b) => b[1]-a[1]).slice(0, 15);
+  const max = sorted[0]?.[1] || 1;
+
+  const container = document.getElementById('top-plats');
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="empty-state">Aucune commande aujourd\'hui</div>';
+    return;
+  }
+
+  container.innerHTML = sorted.map(([name, qty]) => `
+    <div class="plat-row">
+      <div class="plat-name">${name}</div>
+      <div class="plat-bar-wrap"><div class="plat-bar" style="width:${Math.round(qty/max*100)}%"></div></div>
+      <div class="plat-qty">${qty}</div>
+    </div>`).join('');
+}
+
+// ── HISTORIQUE ──
+function renderHistorique() {
+  const container = document.getElementById('historique-list');
+  if (historique.length === 0) {
+    container.innerHTML = '<div class="empty-state">Aucun historique pour aujourd\'hui</div>';
+    return;
+  }
+  container.innerHTML = [...historique].reverse().map(h => `
+    <div class="hist-card">
+      <div class="hist-head">
+        <div class="hist-table">Table ${h.tableNum} — Bon #${h.roundNum}</div>
+        <div class="hist-time">${h.heure}</div>
+      </div>
+      ${(h.items||[]).map(it => `
+        <div class="hist-item">
+          <span>x${it.qty} ${getItemName(it)}</span>
+          ${it.opts?.length ? ` → ${it.opts.join('/')}` : ''}
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+// ── FERMER TABLE ──
+function fermerTable(tableNum) {
+  if (!window.fbDb) return;
+  // Sauvegarder dans l'historique avant de fermer
+  const t = allData[tableNum];
+  if (t) {
+    (t.rounds||[]).forEach((r, idx) => {
+      historique.push({
+        tableNum,
+        roundNum: idx + 1,
+        heure: r.heure || '',
+        items: r.items || [],
+        serveur: t.serveur || '',
+        couverts: t.couverts || '',
+        date: new Date().toLocaleDateString('fr-FR')
+      });
+    });
+    localStorage.setItem('sakafo_historique', JSON.stringify(historique));
+  }
+  window.fbRemove(window.fbRef(window.fbDb, `tables/${tableNum}`));
+  renderHistorique();
+  renderStats();
+}
+
+// ── FIN DE SERVICE ──
+function resetService() {
+  document.getElementById('modal-fin').classList.add('open');
+}
+
+function confirmerFinService() {
+  document.getElementById('modal-fin').classList.remove('open');
+  if (!window.fbDb) return;
+  Object.keys(allData).forEach(k => fermerTable(parseInt(k)));
+  setTimeout(() => {
+    window.fbRemove(window.fbRef(window.fbDb, 'tables'));
+    localStorage.removeItem('sakafo_historique');
+    historique = [];
+    renderHistorique();
+  }, 500);
+}
+
+// ── NOM ARTICLE ──
+function getItemName(item) {
+  if (typeof item === 'string') return item || '?';
+  return item.name || item.key || '?';
 }
 </script>
 </body>
