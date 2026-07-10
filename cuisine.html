@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -230,7 +229,8 @@ function renderBons(data) {
     rounds.forEach((round, roundIdx) => {
       if (!round || !round.items || round.items.length === 0) return;
       allBons.push({
-        tableNum: parseInt(tableNum),
+        tableNum: tableNum,
+        tableLabel: data[tableNum].label || `Table ${tableNum}`,
         roundIdx,
         round,
         table,
@@ -256,7 +256,8 @@ function renderBons(data) {
   });
 
   let html = '<div class="bons-grid">';
-  allBons.forEach(({ tableNum, roundIdx, round, table, isDone, isComplement }) => {
+  allBons.forEach((bon) => {
+    const { tableNum, tableLabel, roundIdx, round, table, isDone, isComplement } = bon;
     const label = roundIdx === 0 ? '1er BON' : `⚡ COMPLÉMENT #${roundIdx}`;
     const badgeClass = isDone ? 'badge-done' : isComplement ? 'badge-comp' : 'badge-new';
     const badgeText = isDone ? '✅ VALIDÉ' : label;
@@ -284,14 +285,14 @@ function renderBons(data) {
       <div class="${cardClass}" id="bon_${tableNum}_${roundIdx}">
         <div class="bon-head">
           <div>
-            <div class="bon-table">Table ${tableNum}</div>
+            <div class="bon-table">${tableLabel}</div>
             <div class="bon-info">${table.couverts ? table.couverts + ' couverts' : ''} ${table.serveur ? '· ' + table.serveur : ''} · ${round.heure || ''}</div>
           </div>
           <span class="bon-badge ${badgeClass}">${badgeText}</span>
         </div>
         <div class="bon-items">${itemsHTML}</div>
         <div class="bon-foot">
-          <button class="btn-valider ${isDone ? 'done' : ''}" onclick="validerBon(${tableNum}, ${roundIdx})">
+          <button class="btn-valider ${isDone ? 'done' : ''}" onclick="validerBon('${tableNum}', ${roundIdx})">
             ${isDone ? '✅ Validé' : '✅ Valider ce bon'}
           </button>
         </div>
