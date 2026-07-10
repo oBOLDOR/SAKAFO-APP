@@ -338,6 +338,7 @@ function initManager() {
       renderLive();
       renderStats();
     });
+    loadHistorique();
   } else {
     document.addEventListener('firebase-ready', () => {
       const r = window.fbRef(window.fbDb, 'tables');
@@ -346,9 +347,9 @@ function initManager() {
         renderLive();
         renderStats();
       });
+      loadHistorique();
     });
   }
-  renderHistorique();
 }
 
 // ── LIVE ──
@@ -475,8 +476,10 @@ function fermerTable(tableNum) {
   if (!window.fbDb) return;
   const t = allData[tableNum];
   if (t) {
+    const today = new Date().toISOString().split('T')[0];
+    const timestamp = Date.now();
     (t.rounds||[]).forEach((r, idx) => {
-      historique.push({
+      const entry = {
         tableNum: t.label || tableNum,
         roundNum: idx + 1,
         heure: r.heure || '',
@@ -486,14 +489,33 @@ function fermerTable(tableNum) {
         nomClient: t.nomClient || '',
         numCmd: t.numCmd || '',
         heureRetrait: t.heureRetrait || '',
-        date: new Date().toLocaleDateString('fr-FR')
-      });
+        date: new Date().toLocaleDateString('fr-FR'),
+        timestamp: timestamp + idx
+      };
+      // Sauvegarder dans Firebase
+      const histRef = window.fbRef(window.fbDb, `historique/${today}/${timestamp}_${idx}`);
+      window.fbSet(histRef, entry);
+      // Aussi en local comme backup
+      historique.push(entry);
     });
     localStorage.setItem('sakafo_historique', JSON.stringify(historique));
   }
   window.fbRemove(window.fbRef(window.fbDb, `tables/${tableNum}`));
   renderHistorique();
   renderStats();
+}
+
+// ── HISTORIQUE DEPUIS FIREBASE ──
+function loadHistorique() {
+  if (!window.fbDb) return;
+  const today = new Date().toISOString().split('T')[0];
+  const r = window.fbRef(window.fbDb, `historique/${today}`);
+  window.fbOnValue(r, (snapshot) => {
+    const data = snapshot.val() || {};
+    historique = Object.values(data).sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+    renderHistorique();
+    renderStats();
+  });
 }
 
 // ── FIN DE SERVICE ──
