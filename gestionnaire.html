@@ -449,14 +449,18 @@ function renderStats() {
 function renderHistorique() {
   const container = document.getElementById('historique-list');
   if (historique.length === 0) {
-    container.innerHTML = '<div class="empty-state">Aucun historique pour aujourd\'hui</div>';
+    container.innerHTML = '<div class="empty-state">Aucun historique — fermez une table pour la voir apparaître ici</div>';
     return;
   }
   container.innerHTML = [...historique].reverse().map(h => `
     <div class="hist-card">
       <div class="hist-head">
-        <div class="hist-table">Table ${h.tableNum} — Bon #${h.roundNum}</div>
-        <div class="hist-time">${h.heure}</div>
+        <div>
+          <div class="hist-table">${h.tableNum} — Bon #${h.roundNum}</div>
+          ${h.nomClient ? `<div style="font-size:11px;color:var(--gold);">👤 ${h.nomClient} ${h.numCmd ? '· N°'+h.numCmd : ''} ${h.heureRetrait ? '· ⏰'+h.heureRetrait : ''}</div>` : ''}
+          <div style="font-size:11px;color:var(--dim);">${h.serveur || ''} · ${h.heure}</div>
+        </div>
+        <div class="hist-time">${h.date}</div>
       </div>
       ${(h.items||[]).map(it => `
         <div class="hist-item">
@@ -469,17 +473,19 @@ function renderHistorique() {
 // ── FERMER TABLE ──
 function fermerTable(tableNum) {
   if (!window.fbDb) return;
-  // Sauvegarder dans l'historique avant de fermer
   const t = allData[tableNum];
   if (t) {
     (t.rounds||[]).forEach((r, idx) => {
       historique.push({
-        tableNum,
+        tableNum: t.label || tableNum,
         roundNum: idx + 1,
         heure: r.heure || '',
         items: r.items || [],
         serveur: t.serveur || '',
         couverts: t.couverts || '',
+        nomClient: t.nomClient || '',
+        numCmd: t.numCmd || '',
+        heureRetrait: t.heureRetrait || '',
         date: new Date().toLocaleDateString('fr-FR')
       });
     });
