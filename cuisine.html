@@ -94,6 +94,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   transition: border-color 0.2s;
 }
 .bon-card.complement { border-color: var(--orange); }
+.bon-card.emporter { border-color: #ff9800; border-width: 3px; }
+.bon-card.emporter .bon-head { background: #ff980022; }
 .bon-card.done { opacity: 0.4; border-color: var(--green); }
 
 .bon-head {
@@ -261,7 +263,7 @@ function renderBons(data) {
     const label = roundIdx === 0 ? '1er BON' : `⚡ COMPLÉMENT #${roundIdx}`;
     const badgeClass = isDone ? 'badge-done' : isComplement ? 'badge-comp' : 'badge-new';
     const badgeText = isDone ? '✅ VALIDÉ' : label;
-    const cardClass = isDone ? 'bon-card done' : isComplement ? 'bon-card complement' : 'bon-card';
+    const cardClass = isDone ? 'bon-card done' : isComplement ? 'bon-card complement' : tableNum === 'EMPORTER' ? 'bon-card emporter' : 'bon-card';
 
     let itemsHTML = '';
     (round.items || []).forEach((item, itemIdx) => {
@@ -286,7 +288,13 @@ function renderBons(data) {
         <div class="bon-head">
           <div>
             <div class="bon-table">${tableLabel}</div>
-            <div class="bon-info">${table.couverts ? table.couverts + ' couverts' : ''} ${table.serveur ? '· ' + table.serveur : ''} · ${round.heure || ''}</div>
+            <div class="bon-info">
+              ${table.numCmd ? `<b style="color:var(--orange);font-size:14px;">N° ${table.numCmd}</b> · ${table.nomClient || ''} · ` : ''}
+              ${table.couverts ? table.couverts + ' couverts · ' : ''}
+              ${table.serveur ? table.serveur + ' · ' : ''}
+              ${table.heureRetrait ? '⏰ ' + table.heureRetrait + ' · ' : ''}
+              ${round.heure || ''}
+            </div>
           </div>
           <span class="bon-badge ${badgeClass}">${badgeText}</span>
         </div>
