@@ -402,11 +402,11 @@ function renderLive() {
       <div class="table-row" style="flex-direction:column;align-items:stretch;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="table-row-left">
-            <div class="table-num">Table ${k}</div>
+            <div class="table-num">${t.label || k}</div>
             <div class="table-info">${t.couverts||'?'} couverts · ${t.serveur||'?'} · ${bons} bon(s) · ${plats} plat(s)</div>
           </div>
           <div class="table-row-right">
-            <button class="btn-fermer" onclick="fermerTable(${k})">✕ Fermer</button>
+            <button class="btn-fermer" onclick="fermerTable('${k}')">✕ Fermer</button>
           </div>
         </div>
         ${detailHTML ? `<div class="table-detail">${detailHTML}</div>` : ''}
