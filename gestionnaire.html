@@ -354,7 +354,12 @@ function initManager() {
 
 // ── LIVE ──
 function renderLive() {
-  const keys = Object.keys(allData);
+  const today = new Date().toISOString().split('T')[0];
+  // Filtrer uniquement les tables du jour
+  const keys = Object.keys(allData).filter(k => {
+    const t = allData[k];
+    return !t.date || t.date === today;
+  });
   let totalCouverts = 0, totalBons = 0, totalPlats = 0;
 
   keys.forEach(k => {
