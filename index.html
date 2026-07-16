@@ -317,6 +317,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
     </div>
   </div>
   <div class="order-meta-row">
+    <div class="meta-pill" style="min-width:120px;">
+      <label>Table</label>
+      <input type="text" id="meta-table-label" placeholder="ex: T1+T2" style="font-weight:600;color:var(--gold);">
+    </div>
     <div class="meta-pill">
       <label>Couverts</label>
       <input type="number" id="meta-couverts" placeholder="nb" min="1" max="20">
@@ -533,18 +537,22 @@ const MENU = [
     { n: "Supplément Chantilly et/ou Nappage" },
   ]},
   { cat: "Boissons sans alcool", items: [
-    { n: "Eau minérale plate" },
+    { n: "Eau minérale plate", opts: ["50cl","1,5L"] },
     { n: "Eau gazeuse" },
     { n: "Coca Cola / Coca Zero", opts: ["Coca Cola","Coca Zero"] },
     { n: "Orangina" },
-    { n: "Jus de fruit GRANINI", opts: ["Orange","Abricot","Fraise","Goyave"] },
-    { n: "Coco Coco / Calamansi", opts: ["Coco Coco","Calamansi"] },
+    { n: "Fresh" },
+    { n: "Bonbon anglais" },
+    { n: "Jus Garana verre" },
+    { n: "Jus Garana 1,5L" },
+    { n: "Jus de fruit GRANINI", opts: ["Orange","Abricot","Fraise","Goyave","Mangue"] },
+    { n: "Corrossol" },
     { n: "Upton Tea / Lipton", opts: ["Upton Tea","Lipton"] },
-    { n: "Jus de Coco", opts: ["Chocolat","Vanille","Fraise","Banane"] },
-    { n: "Milk shake", opts: ["Chocolat","Vanille","Coco","Fraise","Banane"] },
+    { n: "Jus de Coco" },
+    { n: "Milk shake", opts: ["Corrossol","Chocolat","Vanille","Coco","Fraise","Banane"] },
     { n: "Virgin Mojito" },
     { n: "Pink Virgin Mojito" },
-    { n: "Sirop (menthe ou nappages)", opts: ["Menthe","Caramel","Fraise","Fraise Tagada","Menthe"] },
+    { n: "Sirop (menthe ou nappages)", opts: ["Menthe","Caramel","Fraise","Fraise Tagada"] },
     { n: "Supplément Chantilly ou Nappage", opts: ["Chantilly","Nappage"] },
   ]},
   { cat: "Bières & Vins", items: [
@@ -552,8 +560,6 @@ const MENU = [
     { n: "Heineken pression 50cl" },
     { n: "Heineken bouteille 33cl" },
     { n: "THB (33cl)" },
-    { n: "SINGHA (33cl)" },
-    { n: "ASAHI (33cl)" },
     { n: "Affligem" },
     { n: "Vin rouge verre" },
     { n: "Vin blanc verre" },
@@ -682,8 +688,10 @@ function openTable(id) {
 
   // Nom de la table
   const tableInfo = TABLES.find(t => t.id === id);
-  const tableName = id === 'EMPORTER' ? '🥡 À Emporter' : (tableInfo ? tableInfo.label : id);
+  const defaultLabel = id === 'EMPORTER' ? '🥡 À Emporter' : (tableInfo ? tableInfo.label : id);
+  const tableName = tables[id]?.label || defaultLabel;
   document.getElementById('order-title').textContent = tableName;
+  document.getElementById('meta-table-label').value = tableName;
 
   // Champs spéciaux À emporter
   const emporterFields = document.getElementById('emporter-fields');
@@ -898,6 +906,12 @@ function sendOrder() {
   t.couverts = document.getElementById('meta-couverts').value;
   t.service = document.getElementById('meta-service').value;
   t.serveur = document.getElementById('meta-serveur').value;
+  // Label personnalisé
+  const customLabel = document.getElementById('meta-table-label').value.trim();
+  if (customLabel) {
+    t.label = customLabel;
+    document.getElementById('order-title').textContent = customLabel;
+  }
   if (currentTable === 'EMPORTER') {
     t.numCmd = document.getElementById('meta-num-cmd').value;
     t.nomClient = document.getElementById('meta-nom-client').value;
