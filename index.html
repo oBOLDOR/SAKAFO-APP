@@ -319,7 +319,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="order-meta-row">
     <div class="meta-pill" style="min-width:120px;">
       <label>Table</label>
-      <input type="text" id="meta-table-label" placeholder="ex: T1+T2" style="font-weight:600;color:var(--gold);">
+      <input type="text" id="meta-table-label" placeholder="ex: T1+T2" style="font-weight:600;color:var(--gold);" oninput="document.getElementById('order-title').textContent=this.value||'Table'">
     </div>
     <div class="meta-pill">
       <label>Couverts</label>
@@ -1098,7 +1098,7 @@ function syncTableToFirebase(tableId) {
   const label = tableId === 'EMPORTER' ? '🥡 À Emporter' : (tableInfo ? tableInfo.label : tableId);
   const r = window.fbRef(window.fbDb, `tables/${tableId}`);
   window.fbSet(r, {
-    label: label,
+    label: t.label || label,
     couverts: t.couverts || '',
     service: t.service || '',
     serveur: t.serveur || '',
@@ -1106,6 +1106,7 @@ function syncTableToFirebase(tableId) {
     nomClient: t.nomClient || '',
     heureRetrait: t.heureRetrait || '',
     rounds: t.rounds || [],
+    date: new Date().toISOString().split('T')[0],
     updatedAt: Date.now()
   });
 }
