@@ -331,7 +331,7 @@ let allData = {};
 let historique = JSON.parse(localStorage.getItem('sakafo_historique') || '[]');
 
 function initManager() {
-  if (window.fbDb) {
+  const startListening = () => {
     const r = window.fbRef(window.fbDb, 'tables');
     window.fbOnValue(r, (snapshot) => {
       allData = snapshot.val() || {};
@@ -339,16 +339,12 @@ function initManager() {
       renderStats();
     });
     loadHistorique();
+  };
+
+  if (window.fbDb) {
+    startListening();
   } else {
-    document.addEventListener('firebase-ready', () => {
-      const r = window.fbRef(window.fbDb, 'tables');
-      window.fbOnValue(r, (snapshot) => {
-        allData = snapshot.val() || {};
-        renderLive();
-        renderStats();
-      });
-      loadHistorique();
-    });
+    document.addEventListener('firebase-ready', startListening);
   }
 }
 
@@ -402,7 +398,7 @@ function renderLive() {
       <div class="table-row" style="flex-direction:column;align-items:stretch;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="table-row-left">
-            <div class="table-num">${t.label || k}</div>
+            <div class="table-num">${t.label || `Table ${k}`}</div>
             <div class="table-info">${t.couverts||'?'} couverts · ${t.serveur||'?'} · ${bons} bon(s) · ${plats} plat(s)</div>
           </div>
           <div class="table-row-right">
