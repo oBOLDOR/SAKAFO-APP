@@ -319,7 +319,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
   <div class="order-meta-row">
     <div class="meta-pill" style="min-width:120px;">
       <label>Table</label>
-      <input type="text" id="meta-table-label" placeholder="ex: T1+T2" style="font-weight:600;color:var(--gold);" oninput="document.getElementById('order-title').textContent=this.value||'Table'">
+      <input type="text" id="meta-table-label" placeholder="ex: T1+T2" style="font-weight:600;color:var(--gold);" oninput="updateTableLabel(this.value)" onchange="updateTableLabel(this.value)">
     </div>
     <div class="meta-pill">
       <label>Couverts</label>
@@ -834,6 +834,15 @@ function changeQty(key, delta) {
   const card = document.getElementById(`card_${key}`);
   if (card) card.classList.toggle('has-qty', uiQty[key] > 0);
   updateBar();
+}
+
+function updateTableLabel(val) {
+  if (val && val.trim()) {
+    document.getElementById('order-title').textContent = val.trim();
+    if (currentTable && tables[currentTable]) {
+      tables[currentTable].label = val.trim();
+    }
+  }
 }
 
 function toggleOpts(key) {
